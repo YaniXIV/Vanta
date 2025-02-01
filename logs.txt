@@ -1,0 +1,16 @@
+What is the current flow of the project? 
+
+
+
+
+client --> init websocket connection. 
+first conn.Write() is the byte slice of the public key. 
+
+
+server --> scans for connection --> finds a connection. --> first read should be stored in struct map. 
+
+
+in order to store in the map. it will be string(pubkey) --> ws.Conn object
+
+
+next steps. make sure the server first read will be stored into the map. 

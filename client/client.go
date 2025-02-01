@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"sync"
+ 
 )
 
 //const origin string = "http://localhost/"
@@ -21,6 +22,7 @@ const port string = "1444"
 
 var name string
 
+var pubKey, privKey = KeyGen()
 // Hardcoding ip and port for now. *Change Later*
 
 type msg struct {
@@ -31,6 +33,7 @@ type msg struct {
 func main() {
 	initWebsocketClient()
 	fmt.Println("End of Program reached")
+
 }
 
 func initWebsocketClient() {
@@ -47,13 +50,19 @@ func initWebsocketClient() {
 	fmt.Scanln(&name)
 
 	//ws, err := websocket.DialConfig()
-	ws, err := websocket.Dial(fmt.Sprintf("wss://%s:%s/ws", ip, port), "", fmt.Sprintf("https://%s/", ip))
+	ws, err := websocket.Dial(fmt.Sprintf("ws://%s:%s/ws", ip, port), "", fmt.Sprintf("https://%s/", ip))
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err = ws.Write([]byte("<Client Side> connected to Server!\nSecret Message POOP")); err != nil {
+  /*
+  replace first messaqge with the public key! 
+	if _, err = ws.Write([]byte("<Client Side> connected to Server!")); err != nil {
 		log.Fatal(err)
 	}
+ */
+  if _, err = ws.Write(pubKey.Bytes());err != nil{
+    log.Fatal(err)
+  }
 	// Use WaitGroup to wait for goroutines to finish
 	var wg sync.WaitGroup
 
@@ -140,5 +149,7 @@ func receiveMessage(ws *websocket.Conn) []byte {
 }
 
 /*
-Currently trying to secure websocket connection with tls to the server. :)
+what is the current task
+figuring out encryption. 
+^^ I am trying to get the server to contain 
 */
