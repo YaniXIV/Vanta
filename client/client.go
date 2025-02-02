@@ -36,13 +36,7 @@ type msg struct {
 	Text    string `json:"Text"`
 }
 
-func main() {
-	initWebsocketClient()
-	fmt.Println("End of Program reached")
-
-}
-
-func initWebsocketClient() {
+func InitWebsocketClient() {
 	fmt.Println("<Client Side> Starting Client!")
 	//fmt.Printf("ws://%s:%s/wq", ip, port)
 	//fmt.Printf("http://%s/", ip)
