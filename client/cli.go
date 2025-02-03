@@ -89,15 +89,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+type Position float64
+
+const (
+	Top    Position = 0.6
+	Bottom Position = 0.5
+	Center Position = 0.5
+	Left   Position = 0.5
+	Right  Position = 0.5
+)
+
 func (m model) View() string {
+	logo := buildLogo()
+	logoStyle := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(50)
+
+	styledLogo := logoStyle.Render(logo)
+	button := "[ Press Enter to Start ]"
+	buttonStyle := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(50)
+	styledButton := buttonStyle.Render(button)
+	verticalSpace := "\n\n\n"
 	return fmt.Sprintf(
-		buildlogo(),
+		"%s%s%s%s(esc to quit)",
+		styledLogo,
+		verticalSpace,
 		m.textInput.View(),
-		"(esc to quit)",
+		styledButton,
 	) + "\n"
 }
 
-func buildlogo() string {
+func buildLogo() string {
 	var result strings.Builder
 	length := len(logo)
 	fmt.Println(length)
@@ -107,7 +131,9 @@ func buildlogo() string {
 	endRgb := RGB{128, 0, 128}
 	gradient := generateGradient(startRgb, endRgb, length)
 	for i := range logo {
-		styledLine := lipgloss.NewStyle().Foreground(lipgloss.Color(gradient[i])).Render(logo[i])
+		styledLine := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(gradient[i])).
+			Render(logo[i])
 		result.WriteString(styledLine)
 		result.WriteString("\n")
 	}
