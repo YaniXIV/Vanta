@@ -1,4 +1,4 @@
-module server.go
+module Vanta/server
 
 go 1.23.5
 

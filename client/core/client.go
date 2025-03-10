@@ -1,6 +1,8 @@
-package main
+package core
 
 import (
+	"Vanta/client/crypto"
+	"Vanta/client/models"
 	"bufio"
 	"crypto/ecdsa"
 	"crypto/x509"
@@ -13,52 +15,36 @@ import (
 	"sync"
 )
 
-//const origin string = "http://localhost/"
-//const url string = "ws://localhost:1444/ws"
-
-const defaultIp string = "localhost"
-
-// var ip string
-const port string = "1444"
-
+var computedSecret []byte
+var Secrets *[]byte
+var firstRead bool = true
 var name string
 
-var pubKey, privKey = KeyGen()
-
-// Hardcoding ip and port for now. *Change Later*
-var computedSecret []byte
-
-var secrets *[]byte
-var firstRead bool = true
-
-type msg struct {
-	Usrname string `json:"usrname"`
-	Text    string `json:"Text"`
-}
+var pubKey, privKey = crypto.KeyGen()
 
 func InitWebsocketClient() {
 	fmt.Println("<Client Side> Starting Client!")
-	//fmt.Printf("ws://%s:%s/wq", ip, port)
-	//fmt.Printf("http://%s/", ip)
 	var ip string
-	fmt.Println("Please Enter target Ip: ")
-	fmt.Scanln(&ip)
-	if ip == "" {
-		ip = defaultIp
-	}
+	ip = models.DefaultIp
 	fmt.Println("Please Enter Username: ")
 	fmt.Scanln(&name)
 
-	//ws, err := websocket.DialConfig()
-	ws, err := websocket.Dial(fmt.Sprintf("ws://%s:%s/ws", ip, port), "", fmt.Sprintf("https://%s/", ip))
+	ws, err := websocket.Dial(fmt.Sprintf(
+		"ws://%s:%s/ws", ip, models.Port),
+		"",
+		fmt.Sprintf("https://%s/", ip))
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to establish connection!", err)
 	}
 	/*
-		  replace first messaqge with the public key!
-			if _, err = ws.Write([]byte("<Client Side> connected to Server!")); err != nil {
-				log.Fatal(err)
-			}
+		Ok so it seems like I was trying to write a public key to the server first. This seems like a bad approach.
+
+		What I'd do instead is establish a struct that contains the important cryptographic data that I need
+		Identity key
+		a slice of preKeys.
+
+		I also need a method to store that here core side. I think one struct type, x3dh init struct, perhaps.
 	*/
 	if _, err = ws.Write(pubKey.Bytes()); err != nil {
 		log.Fatal(err)
@@ -110,7 +96,7 @@ func getSecret(ws *websocket.Conn) error {
 		fmt.Println("Error with something idk... ", err)
 		forceClose(ws, nil)
 	}
-	computedSecret, err = SharedSecret(sharedPublicKey, privKey)
+	computedSecret, err = crypto.SharedSecret(sharedPublicKey, privKey)
 	if err != nil {
 		fmt.Println("Error with something idk... ", err)
 		forceClose(ws, nil)
@@ -119,6 +105,7 @@ func getSecret(ws *websocket.Conn) error {
 	return nil
 
 }
+
 func forceClose(ws *websocket.Conn, err error) {
 	fmt.Println("Connection Initialization failed...", err)
 	fmt.Println("Aborting Connection!")
@@ -127,6 +114,14 @@ func forceClose(ws *websocket.Conn, err error) {
 		fmt.Println("error closing connection!", closeErr)
 		log.Fatal()
 	}
+}
+
+// Work on this function
+func x3dhInitialization() {
+	return
+	//IdentityKeyPair := crypto.CreateIdentityKeys()
+	//Work on this function, you need to get and sort the keys client side.
+
 }
 
 func listenForMessages(ws *websocket.Conn) {
@@ -141,7 +136,7 @@ func listenForMessages(ws *websocket.Conn) {
 		err := getSecret(ws)
 		if err != nil {
 			forceClose(ws, err)
-			initWebsocketClient()
+			InitWebsocketClient()
 			/*
 				If we fail to get our secret, then we will force close the connection
 				and retry to initialize.
@@ -191,7 +186,7 @@ func sendMessage(ws *websocket.Conn) {
 
 func prepareMsg(m string) ([]byte, error) {
 	//fmt.Println(m)
-	c := msg{name, m}
+	c := models.Msg{name, m}
 	b, err := json.Marshal(c)
 	if err != nil {
 		return nil, err

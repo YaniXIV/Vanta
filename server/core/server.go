@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -10,10 +10,10 @@ import (
 )
 
 type Server struct {
-	mu    sync.Mutex
-	conns map[*websocket.Conn]struct{}
-  pubkeys map[string]*websocket.Conn
-	ip    string
+	mu      sync.Mutex
+	conns   map[*websocket.Conn]struct{}
+	pubkeys map[string]*websocket.Conn
+	ip      string
 }
 type IP struct {
 	Query string
@@ -32,38 +32,36 @@ func (i IP) getIp() string {
 	return i.Query
 }
 
-func InitServer() *Server {
+func initServer() *Server {
 	fmt.Println("Starting Server!")
 	return &Server{
-		conns: make(map[*websocket.Conn]struct{}),
-    pubkeys: make(map[string]*websocket.Conn),
+		conns:   make(map[*websocket.Conn]struct{}),
+		pubkeys: make(map[string]*websocket.Conn),
 	}
 }
 
-
-func (s *Server) handleWS(ws *websocket.Conn) {
-	fmt.Println("<Server Side> New incoming connection from client:", ws.RemoteAddr())
+func (s Server) handleWS(ws *websocket.Conn) {
+	fmt.Println("<Server Side> New incoming connection from core:", ws.RemoteAddr())
 	s.mu.Lock()
 	s.conns[ws] = struct{}{}
 	s.mu.Unlock()
 
-  buf := make([]byte, 1024)
-  n, err := ws.Read(buf)
-  if err != nil{
-    s.mu.Lock()
-    delete(s.conns, ws)
-    s.mu.Unlock()
-    fmt.Println("Connection Dropped! No public key!")
-  }
+	buf := make([]byte, 1024)
+	n, err := ws.Read(buf)
+	if err != nil {
+		s.mu.Lock()
+		delete(s.conns, ws)
+		s.mu.Unlock()
+		fmt.Println("Connection Dropped! No public key!")
+	}
 
-  pubKey := buf[:n]
-  fmt.Printf("pubkey is %v", pubKey)
-  
+	pubKey := buf[:n]
+	fmt.Printf("pubkey is %v", pubKey)
 
 	defer func() {
 		s.mu.Lock()
 		delete(s.conns, ws)
-    delete(s.pubkeys, string(pubKey))
+		delete(s.pubkeys, string(pubKey))
 		s.mu.Unlock()
 	}()
 	s.readLoop(ws)
@@ -115,33 +113,29 @@ func (s *Server) echoConn(ws *websocket.Conn, m []byte) {
 	}
 }
 
-/* 
+/*
 nah this function is fucked up. fix later :)
-func (s *Server) ping(){
-  const p string = "Ping"
-  for{
-    active := make(map[*websocket.Conn]struct{})
-  for i := range s.conns {
-  go (k *ws.Conn)func(i){
-    _, err = i.Write(p)
-        if err != nil{
-          fmt.Println("Ping error ", err)
-        }
-    }()
-  }
 
-  }
-}
+	func (s *Server) ping(){
+	  const p string = "Ping"
+	  for{
+	    active := make(map[*websocket.Conn]struct{})
+	  for i := range s.conns {
+	  go (k *ws.Conn)func(i){
+	    _, err = i.Write(p)
+	        if err != nil{
+	          fmt.Println("Ping error ", err)
+	        }
+	    }()
+	  }
+
+	  }
+	}
 */
-
-func main() {
-
-	server := InitServer()
+func StartServer() {
+	server := initServer()
 	var ip IP
 	i := ip.getIp()
 	fmt.Printf("Server started at %s", i)
 	http.Handle("/ws", websocket.Handler(server.handleWS))
-	if err := http.ListenAndServe("0.0.0.0:80", nil); err != nil {
-		fmt.Println("<Server Side> Server error:", err)
-	}
 }

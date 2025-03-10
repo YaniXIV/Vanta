@@ -1,18 +1,14 @@
 package crypto
 
 import (
+	"Vanta/client/models"
 	"crypto/ecdh"
 	"crypto/rand"
 	"fmt"
 	"log"
 )
 
-type KeyPair struct {
-	publicKey  *ecdh.PublicKey
-	privateKey *ecdh.PrivateKey
-}
-
-func keyGen() KeyPair {
+func keyGen() models.KeyPair {
 	key := ecdh.X25519()
 	privateKey, err := key.GenerateKey(rand.Reader)
 	if err != nil {
@@ -20,7 +16,7 @@ func keyGen() KeyPair {
 		//change this later.
 	}
 	publicKey := privateKey.PublicKey()
-	KP := KeyPair{publicKey, privateKey}
+	KP := models.KeyPair{PublicKey: publicKey, PrivateKey: privateKey}
 
 	return KP
 }
@@ -34,13 +30,9 @@ func ComputeSecret(pubKey *ecdh.PublicKey, privKey *ecdh.PrivateKey) ([]byte, er
 	return secret, nil
 }
 
-func CreateIdentityKeys() KeyPair {
+func CreateIdentityKeys() models.KeyPair {
 	return keyGen()
 }
-func CreateEphemeralKeys() KeyPair {
+func CreateEphemeralKeys() models.KeyPair {
 	return keyGen()
-}
-
-func ComputeKey(DH1, DH2, DH3) []byte {
-
 }
