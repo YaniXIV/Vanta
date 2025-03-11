@@ -167,6 +167,7 @@ func sendMessage(ws *websocket.Conn) {
 			continue
 		}
 
+		//chop off the \n
 		usrin = input[:len(input)-1]
 		if usrin == "q" {
 			break
